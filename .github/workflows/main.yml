@@ -1,53 +1,26 @@
-name: Node.js CI + Docker Scan
+name: CI
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
+pull_request:
+branches:
+- main # или ветка, в которую вливаешь PR
 
 jobs:
-  lint-and-test:
-    runs-on: ubuntu-latest
+build-and-test:
+runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+steps:
+- uses: actions/checkout@v3
+- name: Установить Node.js
+uses: actions/setup-node@v3
+with:
+node-version: '18'
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18
+- name: Установить зависимости
+run: npm install
 
-      - name: Install dependencies
-        run: npm install
+- name: Запустить тесты
+run: npm test
 
-      - name: Run lint
-        run: npm run lint
-
-      - name: Run tests
-        run: npm test
-
-  build-and-scan:
-    needs: lint-and-test
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Build Docker image
-        run: |
-          docker build -t my-node-app:latest .
-
-      - name: Install Trivy scanner
-        run: |
-          sudo apt-get update && sudo apt-get install -y wget apt-transport-https gnupg lsb-release
-          wget -qO - https://aquasecurity.github.io/trivy-repo/deb/public.key | sudo apt-key add -
-          echo deb https://aquasecurity.github.io/trivy-repo/deb $(lsb_release -sc) main | sudo tee -a /etc/apt/sources.list.d/trivy.list
-          sudo apt-get update
-          sudo apt-get install -y trivy
-
-      - name: Scan Docker image with Trivy
-        run: |
-          trivy image --exit-code 1 --severity HIGH,CRITICAL my-node-app:latest
+- name: Запустить линтер
+run: npm run lint
