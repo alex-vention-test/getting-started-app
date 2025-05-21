@@ -27,11 +27,20 @@ FROM node:lts-alpine AS runtime
 # Устанавливаем переменную окружения (на всякий случай)
 ENV NODE_ENV=production
 
+# Create a non-root user and group
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+
 WORKDIR /app
 
 # Копируем только node_modules и исходники из предыдущего этапа
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app .
+
+# Set ownership of the /app directory
+RUN chown -R appuser:appgroup /app
+
+# Switch to the non-root user
+USER appuser
 
 # Открываем порт (если нужно)
 EXPOSE 3000
